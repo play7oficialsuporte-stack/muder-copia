@@ -21,10 +21,10 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Carregamento de Imagens
-const imgCenario = new Image(); imgCenario.src = 'assets/cenario.png';
-const imgRei = new Image(); imgRei.src = 'assets/rei.png';
-const imgAssassino = new Image(); imgAssassino.src = 'assets/assassino.png';
+// Carregamento das Imagens da Raiz do Repositório
+const imgCenario = new Image(); imgCenario.src = 'cenario .png';
+const imgRei = new Image(); imgRei.src = 'rei.png';
+const imgAssassino = new Image(); imgAssassino.src = 'assassino.png';
 
 let assetsLoaded = 0;
 function checkLoaded() {
@@ -65,7 +65,7 @@ function update() {
     if (isHolding) {
         stabCharge += 0.7;
         
-        // Se o Rei olhou enquanto você carrega o golpe
+        // Se o Rei olhou enquanto carrega o golpe
         if (kingLooking) {
             gameOver = true;
         }
@@ -83,24 +83,21 @@ function update() {
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Desenhar Fundo (Cortado da imagem cenario.png)
+    // 1. Desenhar Fundo
     if (imgCenario.complete) {
-        // Corta a parte do CASTLE_BACKGROUND
         ctx.drawImage(imgCenario, 0, 0, imgCenario.width, 180, 0, 0, 800, 320);
-        // Corta a parte do CASTLE_FLOOR
         ctx.drawImage(imgCenario, 0, 180, imgCenario.width, 80, 0, 320, 800, 130);
     }
 
-    // 2. Desenhar Rei (Cortado da imagem rei.png)
+    // 2. Desenhar Rei
     if (imgRei.complete) {
-        // Se estiver olhando usa o quadro de alerta, se não usa idle
         let kingFrameX = kingLooking ? 300 : 0; 
         ctx.drawImage(imgRei, kingFrameX, 0, 150, 200, 480, 180, 120, 160);
     }
 
-    // 3. Desenhar Assassino (Cortado da imagem assassino.png)
+    // 3. Desenhar Assassino
     if (imgAssassino.complete) {
-        let assassinFrameY = isHolding ? 200 : 0; // Pega a linha de ataque ou idle
+        let assassinFrameY = isHolding ? 200 : 0; 
         ctx.drawImage(imgAssassino, 0, assassinFrameY, 150, 180, 320, 170, 120, 160);
     }
 
