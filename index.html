@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Murder - HTML5 Replica</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: sans-serif;
+        }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 800px;
+            max-height: 450px;
+            background: #000;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = 800;
+canvas.height = 450;
+
+// Estados do Jogo
+const STATE = { ASSASSIN: 0, KING: 1, GAMEOVER: 2, SUCCESS: 3 };
+let currentState = STATE.ASSASSIN;
+
+// Variáveis da Barra de Carga
+let stabCharge = 0;
+const maxCharge = 100;
+let isHoldingBtn = false;
+
+// Entidades
+const king = {
+    x: 480,
+    y: 220,
+    width: 90,
+    height: 140,
+    lookingBack: false,
+    lookTimer: 0,
+    stateTimer: 0
+};
+
+const assassin = {
+    x: 340,
+    y: 210,
+    width: 80,
+    height: 150,
+    isWhistling: false,
+    isCaught: false
+};
+
+// Controles por Toque / Clique / Teclado
+function setupEvents() {
+    const startCharge = (e) => {
+        if (e) e.preventDefault();
+        if (currentState === STATE.ASSASSIN && !assassin.isCaught) {
+            isHoldingBtn = true;
+        } else if (currentState === STATE.KING) {
+            king.lookingBack = true;
+        }
+    };
+
+    const endCharge = (e) => {
+        if (e) e.preventDefault();
+        isHoldingBtn = false;
+        if (currentState === STATE.KING) {
+            king.lookingBack = false;
+        }
+    };
+
+    window.addEventListener('mousedown', startCharge);
+    window.addEventListener('mouseup', endCharge);
+    window.addEventListener('touchstart', startCharge);
+    window.addEventListener('touchend', endCharge);
+    
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') startCharge();
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') endCharge();
+    });
+}
+
+function update() {
+    if (currentState === STATE.ASSASSIN) {
+        // Lógica da Inteligência do Rei (Olhar para trás aleatoriamente)
+        king.stateTimer++;
+        if (king.stateTimer > king.lookTimer) {
+            king.lookingBack = !king.lookingBack;
+            king.stateTimer = 0;
+            // Define um intervalo aleatório para o próximo olhar (2 a 4 segundos)
+            king.lookTimer = Math.floor(Math.random() * 120) + 100; 
+        }
+
+        // Lógica do Carregamento do Golpe
+        if (isHoldingBtn) {
+            assassin.isWhistling = false;
+            stabCharge += 0.8; // Velocidade da barra
+
+            // Se o Rei olhou enquanto carrega o golpe -> Flagrado!
+            if (king.lookingBack) {
+                assassin.isCaught = true;
+                currentState = STATE.GAMEOVER;
+            }
+
+            // Golpe Concluído com Sucesso
+            if (stabCharge >= maxCharge) {
+                currentState = STATE.SUCCESS;
+            }
+        } else {
+            // Se soltou o botão, esvazia a barra e ativa disfarce
+            if (stabCharge > 0) stabCharge -= 2;
+            if (stabCharge < 0) stabCharge = 0;
+            assassin.isWhistling = true;
+        }
+    }
+}
+
+function draw() {
+    // 1. Cenário do Castelo
+    ctx.fillStyle = '#bfa3b5'; // Parede fundo
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Pilastras
+    ctx.fillStyle = '#6d7582';
+    ctx.fillRect(100, 0, 40, 360);
+    ctx.fillRect(350, 0, 40, 360);
+    ctx.fillRect(600, 0, 40, 360);
+
+    // Tapete Vermelho no Chão
+    ctx.fillStyle = '#4a4a4a';
+    ctx.fillRect(0, 360, canvas.width, 90);
+    ctx.fillStyle = '#a82c2c';
+    ctx.fillRect(0, 365, canvas.width, 75);
+
+    // Cortina Vermelha
+    ctx.fillStyle = '#801d1d';
+    ctx.fillRect(0, 0, 70, 360);
+
+    // Quadro do Rei na Parede
+    ctx.fillStyle = '#d4af37';
+    ctx.fillRect(200, 120, 70, 80);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(208, 128, 54, 64);
+
+    // 2. Barra de Progresso Superior (Estilo Original)
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillRect(150, 20, 500, 16);
+    ctx.fillStyle = '#e74c3c';
+    ctx.fillRect(150, 20, (stabCharge / maxCharge) * 500, 16);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(150, 20, 500, 16);
+
+    // 3. Desenho do Rei
+    ctx.fillStyle = '#a82c2c'; // Manto
+    ctx.fillRect(king.x, king.y, king.width, king.height);
+    
+    // Cabeça do Rei
+    ctx.fillStyle = '#ffe0bd';
+    ctx.fillRect(king.x + 10, king.y - 30, 50, 40);
+    
+    // Coroa
+    ctx.fillStyle = '#f1c40f';
+    ctx.fillRect(king.x + 15, king.y - 55, 40, 25);
+
+    // Rosto/Olhar do Rei
+    ctx.fillStyle = '#000';
+    if (king.lookingBack) {
+        // Olhando para a Esquerda (Para o Assassino)
+        ctx.fillRect(king.x + 15, king.y - 20, 8, 8);
+        ctx.fillText("👀", king.x - 15, king.y - 30);
+    } else {
+        // Olhando para a Direita
+        ctx.fillRect(king.x + 45, king.y - 20, 8, 8);
+    }
+
+    // 4. Desenho do Assassino
+    ctx.fillStyle = '#7d5295'; // Roupa Roxa
+    ctx.fillRect(assassin.x, assassin.y, assassin.width, assassin.height);
+    
+    // Cabeça do Assassino
+    ctx.fillStyle = '#ffe0bd';
+    ctx.fillRect(assassin.x + 20, assassin.y - 30, 45, 40);
+
+    // Animação de Erguer a Adaga
+    if (isHoldingBtn) {
+        ctx.fillStyle = '#bdc3c7'; // Lâmina
+        ctx.fillRect(assassin.x + 65, assassin.y + (30 - (stabCharge/2)), 8, 40);
+        ctx.fillStyle = '#f39c12'; // Cabo
+        ctx.fillRect(assassin.x + 63, assassin.y + (70 - (stabCharge/2)), 12, 10);
+    } 
+    // Animação de Assobiar / Disfarçar
+    else if (assassin.isWhistling) {
+        ctx.fillStyle = '#000';
+        ctx.font = '16px sans-serif';
+        ctx.fillText("🎵", assassin.x + 30, assassin.y - 45);
+    }
+
+    // 5. Interface - Botão Vermelho no Canto Inferior Esquerdo
+    ctx.beginPath();
+    ctx.arc(100, 370, 45, 0, Math.PI * 2);
+    ctx.fillStyle = '#a82c2c';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#f1c40f';
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText("SEGURE", 100, 375);
+
+    // Mensagens de Estado
+    if (currentState === STATE.GAMEOVER) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText("PRESO PELOS GUARDAS!", canvas.width / 2, canvas.height / 2);
+    } else if (currentState === STATE.SUCCESS) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = 'bold 30px sans-serif';
+        ctx.fillText("VOCÊ É O NOVO REI!", canvas.width / 2, canvas.height / 2);
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+setupEvents();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>
