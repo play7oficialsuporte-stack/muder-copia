@@ -23,9 +23,10 @@
     }
     #status {
       text-align: center;
-      font-size: 1.1rem;
+      font-size: 1rem;
       margin-bottom: 20px;
-      color: #aaa;
+      color: #ff5252;
+      word-break: break-word;
     }
     .grid-mangas {
       display: grid;
@@ -71,7 +72,7 @@
 <body>
 
   <h1>Meus Mangás</h1>
-  <p id="status">A carregar mangás...</p>
+  <p id="status" style="color: #aaa;">A carregar mangás...</p>
   
   <div id="grid-mangas" class="grid-mangas"></div>
 
@@ -84,47 +85,63 @@
       const options = {
         method: 'GET',
         headers: {
-          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79', // Sua chave[span_0](start_span)[span_0](end_span)
+          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79',
           'x-rapidapi-host': 'mangaverse-api.p.rapidapi.com'
         }
       };
 
       try {
         const response = await fetch(url, options);
+
+        if (!response.ok) {
+          throw new Error(`Erro na API (${response.status}): Verifique se subscreveu o plano gratuito no RapidAPI.`);
+        }
+
         const result = await response.json();
+        
+        // Trata diferentes formatos de resposta possíveis
+        let mangas = [];
+        if (Array.isArray(result)) {
+          mangas = result;
+        } else if (result.data && Array.isArray(result.data)) {
+          mangas = result.data;
+        } else if (result.data && result.data.mangas) {
+          mangas = result.data.mangas;
+        }
 
-        // Limpa o texto de carregamento
-        statusElement.innerText = '';
-
-        // Pega a lista de dados retornada pela API
-        const mangas = result.data || result;
-
-        if (!mangas || mangas.length === 0) {
-          statusElement.innerText = 'Nenhum mangá encontrado.';
+        if (mangas.length === 0) {
+          statusElement.style.color = '#ffb74d';
+          statusElement.innerText = 'Nenhum mangá retornado pela API.';
           return;
         }
 
-        // Renderiza cada mangá em tela
+        statusElement.innerText = ''; // Limpa o texto de carregamento
+
         mangas.forEach(manga => {
           const card = document.createElement('div');
           card.className = 'card';
+          
+          const titulo = manga.title || manga.name || 'Sem título';
+          const imagem = manga.thumb || manga.cover || manga.image || 'https://via.placeholder.com/160x230?text=Sem+Capa';
+          const tipo = manga.type || 'Manga';
+
           card.innerHTML = `
-            <img src="${manga.thumb || 'https://via.placeholder.com/160x230?text=Sem+Capa'}" alt="${manga.title}">
+            <img src="${imagem}" alt="${titulo}">
             <div class="card-info">
-              <div class="card-title">${manga.title}</div>
-              <div class="card-type">${manga.type || 'Manga'}</div>
+              <div class="card-title">${titulo}</div>
+              <div class="card-type">${tipo}</div>
             </div>
           `;
           gridElement.appendChild(card);
         });
 
       } catch (error) {
-        console.error('Erro na API:', error);
-        statusElement.innerText = 'Erro ao carregar os dados da API.';
+        console.error('Erro:', error);
+        statusElement.style.color = '#ff5252';
+        statusElement.innerText = error.message;
       }
     }
 
-    // Executa ao abrir a página
     carregarMangas();
   </script>
 </body>
