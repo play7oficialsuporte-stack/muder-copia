@@ -41,6 +41,14 @@
       display: flex;
       flex-direction: column;
       box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 14px rgba(0,230,118,0.3);
     }
     .card img {
       width: 100%;
@@ -77,7 +85,6 @@
 
   <script>
     async function carregarMangas() {
-      // URL com os parâmetros exatos aceitos pela API
       const url = 'https://mangaverse-api.p.rapidapi.com/manga/fetch?page=1&type=all&nsfw=false';
       const statusElement = document.getElementById('status');
       const gridElement = document.getElementById('grid-mangas');
@@ -85,7 +92,7 @@
       const options = {
         method: 'GET',
         headers: {
-          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79', // Sua chave
+          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79',
           'x-rapidapi-host': 'mangaverse-api.p.rapidapi.com'
         }
       };
@@ -99,7 +106,6 @@
 
         const result = await response.json();
         
-        // Extrai a lista de mangás conforme o formato retornado
         let mangas = [];
         if (Array.isArray(result)) {
           mangas = result;
@@ -114,12 +120,18 @@
           return;
         }
 
-        statusElement.innerText = ''; // Limpa o status de carregamento
+        statusElement.innerText = ''; 
 
         mangas.forEach(manga => {
-          const card = document.createElement('div');
+          // Cria o cartão como um link (<a>)
+          const card = document.createElement('a');
           card.className = 'card';
           
+          // Define a URL de destino (link do mangá ou busca no Google/fonte caso não haja URL direta)
+          const linkManga = manga.link || manga.url || `https://www.google.com/search?q=${encodeURIComponent(manga.title || manga.name)}`;
+          card.href = linkManga;
+          card.target = '_blank'; // Abre numa nova aba
+
           const titulo = manga.title || manga.name || 'Sem título';
           const imagem = manga.thumb || manga.cover || manga.image || 'https://via.placeholder.com/160x230?text=Sem+Capa';
           const tipo = manga.type || 'Manga';
