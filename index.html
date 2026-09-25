@@ -1,138 +1,131 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Murder - Cópia</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-        body { background: #111; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
-        #game-container { position: relative; width: 100vw; height: 100vh; max-width: 800px; max-height: 450px; }
-        canvas { width: 100%; height: 100%; image-rendering: pixelated; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Mangás</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00e676;
+    }
+    #status {
+      text-align: center;
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+      color: #aaa;
+    }
+    .grid-mangas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background-color: #1e1e1e;
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .card img {
+      width: 100%;
+      height: 230px;
+      object-fit: cover;
+    }
+    .card-info {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: bold;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .card-type {
+      font-size: 0.75rem;
+      color: #00e676;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-top: auto;
+    }
+  </style>
 </head>
 <body>
 
-<div id="game-container">
-    <canvas id="gameCanvas" width="800" height="450"></canvas>
-</div>
+  <h1>Meus Mangás</h1>
+  <p id="status">A carregar mangás...</p>
+  
+  <div id="grid-mangas" class="grid-mangas"></div>
 
-<script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+  <script>
+    async function carregarMangas() {
+      const url = 'https://mangaverse-api.p.rapidapi.com/manga/fetch?page=1&nsfw=false';
+      const statusElement = document.getElementById('status');
+      const gridElement = document.getElementById('grid-mangas');
 
-// Carregamento das Imagens da Raiz do Repositório
-const imgCenario = new Image(); imgCenario.src = 'cenario .png';
-const imgRei = new Image(); imgRei.src = 'rei.png';
-const imgAssassino = new Image(); imgAssassino.src = 'assassino.png';
+      const options = {
+        method: 'GET',
+        headers: {
+          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79', // Sua chave[span_0](start_span)[span_0](end_span)
+          'x-rapidapi-host': 'mangaverse-api.p.rapidapi.com'
+        }
+      };
 
-let assetsLoaded = 0;
-function checkLoaded() {
-    assetsLoaded++;
-    if (assetsLoaded === 3) requestAnimationFrame(gameLoop);
-}
-imgCenario.onload = checkLoaded;
-imgRei.onload = checkLoaded;
-imgAssassino.onload = checkLoaded;
+      try {
+        const response = await fetch(url, options);
+        const result = await response.json();
 
-// Estados do Jogo
-let stabCharge = 0;
-let isHolding = false;
-let kingLooking = false;
-let kingTimer = 0;
-let gameOver = false;
-let success = false;
+        // Limpa o texto de carregamento
+        statusElement.innerText = '';
 
-// Eventos de Toque/Clique
-const startPress = (e) => { if (e) e.preventDefault(); if (!gameOver && !success) isHolding = true; };
-const endPress = (e) => { if (e) e.preventDefault(); isHolding = false; };
+        // Pega a lista de dados retornada pela API
+        const mangas = result.data || result;
 
-window.addEventListener('mousedown', startPress);
-window.addEventListener('mouseup', endPress);
-window.addEventListener('touchstart', startPress);
-window.addEventListener('touchend', endPress);
-
-function update() {
-    if (gameOver || success) return;
-
-    // Lógica do Rei virar de tempos em tempos
-    kingTimer++;
-    if (kingTimer > 150) {
-        kingLooking = !kingLooking;
-        kingTimer = 0;
-    }
-
-    if (isHolding) {
-        stabCharge += 0.7;
-        
-        // Se o Rei olhou enquanto carrega o golpe
-        if (kingLooking) {
-            gameOver = true;
+        if (!mangas || mangas.length === 0) {
+          statusElement.innerText = 'Nenhum mangá encontrado.';
+          return;
         }
 
-        // Se completou a barra
-        if (stabCharge >= 100) {
-            success = true;
-        }
-    } else {
-        if (stabCharge > 0) stabCharge -= 2;
-        if (stabCharge < 0) stabCharge = 0;
-    }
-}
+        // Renderiza cada mangá em tela
+        mangas.forEach(manga => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.innerHTML = `
+            <img src="${manga.thumb || 'https://via.placeholder.com/160x230?text=Sem+Capa'}" alt="${manga.title}">
+            <div class="card-info">
+              <div class="card-title">${manga.title}</div>
+              <div class="card-type">${manga.type || 'Manga'}</div>
+            </div>
+          `;
+          gridElement.appendChild(card);
+        });
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // 1. Desenhar Fundo
-    if (imgCenario.complete) {
-        ctx.drawImage(imgCenario, 0, 0, imgCenario.width, 180, 0, 0, 800, 320);
-        ctx.drawImage(imgCenario, 0, 180, imgCenario.width, 80, 0, 320, 800, 130);
-    }
-
-    // 2. Desenhar Rei
-    if (imgRei.complete) {
-        let kingFrameX = kingLooking ? 300 : 0; 
-        ctx.drawImage(imgRei, kingFrameX, 0, 150, 200, 480, 180, 120, 160);
+      } catch (error) {
+        console.error('Erro na API:', error);
+        statusElement.innerText = 'Erro ao carregar os dados da API.';
+      }
     }
 
-    // 3. Desenhar Assassino
-    if (imgAssassino.complete) {
-        let assassinFrameY = isHolding ? 200 : 0; 
-        ctx.drawImage(imgAssassino, 0, assassinFrameY, 150, 180, 320, 170, 120, 160);
-    }
-
-    // 4. Barra de Carregamento Superior
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(200, 20, 400, 20);
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(200, 20, (stabCharge / 100) * 400, 20);
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(200, 20, 400, 20);
-
-    // Mensagens de Fim de Jogo
-    if (gameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#ff4d4d';
-        ctx.font = 'bold 30px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText("PRESO! O REI TE VIU!", 400, 225);
-    } else if (success) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#2ecc71';
-        ctx.font = 'bold 30px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText("VITÓRIA! VOCÊ É O NOVO REI!", 400, 225);
-    }
-}
-
-function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-</script>
+    // Executa ao abrir a página
+    carregarMangas();
+  </script>
 </body>
 </html>
