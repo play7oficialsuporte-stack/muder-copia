@@ -25,8 +25,7 @@
       text-align: center;
       font-size: 1rem;
       margin-bottom: 20px;
-      color: #ff5252;
-      word-break: break-word;
+      color: #aaa;
     }
     .grid-mangas {
       display: grid;
@@ -72,20 +71,21 @@
 <body>
 
   <h1>Meus Mangás</h1>
-  <p id="status" style="color: #aaa;">A carregar mangás...</p>
+  <p id="status">A carregar mangás...</p>
   
   <div id="grid-mangas" class="grid-mangas"></div>
 
   <script>
     async function carregarMangas() {
-      const url = 'https://mangaverse-api.p.rapidapi.com/manga/fetch?page=1&nsfw=false';
+      // URL com os parâmetros exatos aceitos pela API
+      const url = 'https://mangaverse-api.p.rapidapi.com/manga/fetch?page=1&type=all&nsfw=false';
       const statusElement = document.getElementById('status');
       const gridElement = document.getElementById('grid-mangas');
 
       const options = {
         method: 'GET',
         headers: {
-          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79',
+          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79', // Sua chave
           'x-rapidapi-host': 'mangaverse-api.p.rapidapi.com'
         }
       };
@@ -94,12 +94,12 @@
         const response = await fetch(url, options);
 
         if (!response.ok) {
-          throw new Error(`Erro na API (${response.status}): Verifique se subscreveu o plano gratuito no RapidAPI.`);
+          throw new Error(`Erro na requisição: Status ${response.status}`);
         }
 
         const result = await response.json();
         
-        // Trata diferentes formatos de resposta possíveis
+        // Extrai a lista de mangás conforme o formato retornado
         let mangas = [];
         if (Array.isArray(result)) {
           mangas = result;
@@ -110,12 +110,11 @@
         }
 
         if (mangas.length === 0) {
-          statusElement.style.color = '#ffb74d';
-          statusElement.innerText = 'Nenhum mangá retornado pela API.';
+          statusElement.innerText = 'Nenhum mangá encontrado.';
           return;
         }
 
-        statusElement.innerText = ''; // Limpa o texto de carregamento
+        statusElement.innerText = ''; // Limpa o status de carregamento
 
         mangas.forEach(manga => {
           const card = document.createElement('div');
@@ -126,7 +125,7 @@
           const tipo = manga.type || 'Manga';
 
           card.innerHTML = `
-            <img src="${imagem}" alt="${titulo}">
+            <img src="${imagem}" alt="${titulo}" onerror="this.src='https://via.placeholder.com/160x230?text=Sem+Capa'">
             <div class="card-info">
               <div class="card-title">${titulo}</div>
               <div class="card-type">${tipo}</div>
