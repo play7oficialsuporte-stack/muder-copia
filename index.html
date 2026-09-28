@@ -5,10 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rede Stories</title>
   
-  <!-- Firebase SDKs (Compat Versão para Ficheiro Único) -->
+  <!-- Firebase SDKs (Compat Versão) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 
   <style>
     * {
@@ -209,7 +208,6 @@
   </div>
 
   <script>
-    // As tuas chaves de configuração do Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyD_UAgEl768R3DaDGTxsGjE2nJOJAmO_N8",
       authDomain: "stories-5bc7c.firebaseapp.com",
@@ -220,12 +218,9 @@
       measurementId: "G-Z91PJL1MWG"
     };
 
-    // Inicialização do Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const storage = firebase.storage();
 
-    // Elementos do DOM
     const btnOpenModal = document.getElementById('btn-open-modal');
     const btnCancel = document.getElementById('btn-cancel');
     const btnUpload = document.getElementById('btn-upload');
@@ -238,11 +233,17 @@
     const viewerUsername = document.getElementById('viewer-username');
     const progressLine = document.getElementById('progress-line');
 
-    // Modais
     btnOpenModal.onclick = () => modalAdd.style.display = 'flex';
     btnCancel.onclick = () => modalAdd.style.display = 'none';
 
-    // Enviar Novo Story
+    // Função de conversão da imagem para Base64
+    const fileToBase64 = file => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+    });
+
     btnUpload.onclick = async () => {
       const username = document.getElementById('username-input').value;
       const file = document.getElementById('image-input').files[0];
@@ -256,13 +257,11 @@
       btnUpload.disabled = true;
 
       try {
-        const storageRef = storage.ref(`stories/${Date.now()}_${file.name}`);
-        await storageRef.put(file);
-        const imageUrl = await storageRef.getDownloadURL();
+        const imageBase64 = await fileToBase64(file);
 
         await db.collection('stories').add({
           username: username,
-          imageUrl: imageUrl,
+          imageUrl: imageBase64,
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
@@ -271,14 +270,13 @@
         document.getElementById('image-input').value = '';
       } catch (error) {
         console.error("Erro:", error);
-        alert("Erro ao publicar o story. Verifica as permissões do Firebase.");
+        alert("Erro ao publicar o story. Verifica as permissões do Firestore.");
       } finally {
         btnUpload.innerText = "Postar Story";
         btnUpload.disabled = false;
       }
     };
 
-    // Carregar Stories em Tempo Real
     db.collection('stories')
       .orderBy('createdAt', 'desc')
       .onSnapshot(snapshot => {
@@ -298,7 +296,6 @@
         });
       });
 
-    // Visualização do Story
     let timer = null;
     function openStory(data) {
       storyViewer.style.display = 'flex';
