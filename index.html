@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rede Stories</title>
   
-  <!-- Firebase SDKs -->
+  <!-- Firebase SDKs (Compat Versão para Ficheiro Único) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
@@ -176,7 +176,7 @@
     <h1>Rede Stories</h1>
   </header>
 
-  <!-- Barra de Stories na Horizontal -->
+  <!-- Barra de Stories -->
   <div class="stories-container">
     <div class="story-circle add-story" id="btn-open-modal">
       <span>+</span>
@@ -198,7 +198,7 @@
     </div>
   </div>
 
-  <!-- Visualizador de Story em Tela Cheia -->
+  <!-- Visualizador de Story -->
   <div class="story-viewer" id="story-viewer">
     <div class="progress-bar"><div class="progress" id="progress-line"></div></div>
     <span class="close-viewer" id="close-viewer">&times;</span>
@@ -209,22 +209,23 @@
   </div>
 
   <script>
-    // 1. CONFIGURE SEU FIREBASE AQUI
+    // As tuas chaves de configuração do Firebase
     const firebaseConfig = {
-      apiKey: "SUA_API_KEY",
-      authDomain: "SEU_PROJECT_ID.firebaseapp.com",
-      projectId: "SEU_PROJECT_ID",
-      storageBucket: "SEU_PROJECT_ID.appspot.com",
-      messagingSenderId: "SEU_SENDER_ID",
-      appId: "SEU_APP_ID"
+      apiKey: "AIzaSyD_UAgEl768R3DaDGTxsGjE2nJOJAmO_N8",
+      authDomain: "stories-5bc7c.firebaseapp.com",
+      projectId: "stories-5bc7c",
+      storageBucket: "stories-5bc7c.firebasestorage.app",
+      messagingSenderId: "13370075903",
+      appId: "1:13370075903:web:f76554bd014a9f9ca13aca",
+      measurementId: "G-Z91PJL1MWG"
     };
 
-    // Inicializa o Firebase
+    // Inicialização do Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const storage = firebase.storage();
 
-    // Elementos da Interface
+    // Elementos do DOM
     const btnOpenModal = document.getElementById('btn-open-modal');
     const btnCancel = document.getElementById('btn-cancel');
     const btnUpload = document.getElementById('btn-upload');
@@ -237,30 +238,28 @@
     const viewerUsername = document.getElementById('viewer-username');
     const progressLine = document.getElementById('progress-line');
 
-    // Abrir e Fechar Modal
+    // Modais
     btnOpenModal.onclick = () => modalAdd.style.display = 'flex';
     btnCancel.onclick = () => modalAdd.style.display = 'none';
 
-    // Salvar Story no Firebase
+    // Enviar Novo Story
     btnUpload.onclick = async () => {
       const username = document.getElementById('username-input').value;
       const file = document.getElementById('image-input').files[0];
 
       if (!username || !file) {
-        alert("Preencha seu nome e escolha uma foto!");
+        alert("Preenche o teu nome e escolhe uma imagem!");
         return;
       }
 
-      btnUpload.innerText = "Enviando...";
+      btnUpload.innerText = "A enviar...";
       btnUpload.disabled = true;
 
       try {
-        // Envia a foto para o Storage
         const storageRef = storage.ref(`stories/${Date.now()}_${file.name}`);
         await storageRef.put(file);
         const imageUrl = await storageRef.getDownloadURL();
 
-        // Grava no banco de dados
         await db.collection('stories').add({
           username: username,
           imageUrl: imageUrl,
@@ -272,14 +271,14 @@
         document.getElementById('image-input').value = '';
       } catch (error) {
         console.error("Erro:", error);
-        alert("Erro ao postar o story.");
+        alert("Erro ao publicar o story. Verifica as permissões do Firebase.");
       } finally {
         btnUpload.innerText = "Postar Story";
         btnUpload.disabled = false;
       }
     };
 
-    // Carregar Stories dos Usuários em Tempo Real
+    // Carregar Stories em Tempo Real
     db.collection('stories')
       .orderBy('createdAt', 'desc')
       .onSnapshot(snapshot => {
@@ -299,7 +298,7 @@
         });
       });
 
-    // Exibir o Story por 5 segundos
+    // Visualização do Story
     let timer = null;
     function openStory(data) {
       storyViewer.style.display = 'flex';
