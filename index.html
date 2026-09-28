@@ -3,7 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catálogo de Mangás</title>
+  <title>Rede Stories</title>
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
   <style>
     * {
       box-sizing: border-box;
@@ -11,149 +17,315 @@
       padding: 0;
       font-family: Arial, sans-serif;
     }
+
     body {
       background-color: #121212;
-      color: #ffffff;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-      margin-bottom: 20px;
-      color: #00e676;
-    }
-    #status {
-      text-align: center;
-      font-size: 1rem;
-      margin-bottom: 20px;
-      color: #aaa;
-    }
-    .grid-mangas {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 16px;
-      max-width: 1200px;
-      margin: 0 auto;
-    }
-    .card {
-      background-color: #1e1e1e;
-      border-radius: 8px;
-      overflow: hidden;
+      color: #fff;
       display: flex;
       flex-direction: column;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      align-items: center;
     }
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 6px 14px rgba(0,230,118,0.3);
-    }
-    .card img {
+
+    .header {
       width: 100%;
-      height: 230px;
-      object-fit: cover;
+      padding: 15px;
+      text-align: center;
+      background-color: #1e1e1e;
+      border-bottom: 1px solid #333;
     }
-    .card-info {
-      padding: 10px;
+
+    .stories-container {
+      display: flex;
+      gap: 15px;
+      padding: 15px;
+      width: 100%;
+      max-width: 500px;
+      overflow-x: auto;
+      background-color: #1e1e1e;
+      border-bottom: 1px solid #333;
+    }
+
+    .story-circle {
+      min-width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      border: 3px solid #e1306c;
       display: flex;
       flex-direction: column;
-      flex-grow: 1;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      background-size: cover;
+      background-position: center;
     }
-    .card-title {
-      font-size: 0.95rem;
-      font-weight: bold;
-      margin-bottom: 6px;
-      line-height: 1.2;
+
+    .add-story {
+      border: 2px dashed #888;
+      background-color: #2a2a2a;
     }
-    .card-type {
-      font-size: 0.75rem;
-      color: #00e676;
-      text-transform: uppercase;
-      font-weight: bold;
-      margin-top: auto;
+
+    .add-story span {
+      font-size: 24px;
+      color: #fff;
+    }
+
+    .story-item p {
+      font-size: 11px;
+      text-align: center;
+      margin-top: 5px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      width: 70px;
+    }
+
+    /* Modal de Envio */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .modal-content {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 90%;
+      max-width: 350px;
+    }
+
+    .modal-content input {
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .modal-actions button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #btn-upload { background: #e1306c; color: white; }
+    #btn-cancel { background: #555; color: white; }
+
+    /* Visualizador de Story em Tela Cheia */
+    .story-viewer {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 100;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .story-viewer img {
+      max-width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+    }
+
+    .close-viewer {
+      position: absolute;
+      top: 15px; right: 20px;
+      font-size: 30px;
+      cursor: pointer;
+      z-index: 101;
+    }
+
+    .viewer-header {
+      position: absolute;
+      top: 25px; left: 20px;
+      font-size: 16px;
+      z-index: 101;
+    }
+
+    .progress-bar {
+      position: absolute;
+      top: 10px; left: 10px; right: 10px;
+      height: 3px;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .progress {
+      width: 0%;
+      height: 100%;
+      background: #fff;
+      transition: width 0.1s linear;
     }
   </style>
 </head>
 <body>
 
-  <h1>Meus Mangás</h1>
-  <p id="status">A carregar mangás...</p>
-  
-  <div id="grid-mangas" class="grid-mangas"></div>
+  <header class="header">
+    <h1>Rede Stories</h1>
+  </header>
+
+  <!-- Barra de Stories na Horizontal -->
+  <div class="stories-container">
+    <div class="story-circle add-story" id="btn-open-modal">
+      <span>+</span>
+      <p>Novo</p>
+    </div>
+    <div id="stories-list" style="display: flex; gap: 15px;"></div>
+  </div>
+
+  <!-- Modal para Criar Story -->
+  <div class="modal" id="modal-add">
+    <div class="modal-content">
+      <h3>Criar Novo Story</h3>
+      <input type="text" id="username-input" placeholder="Seu Nome/Usuário" required>
+      <input type="file" id="image-input" accept="image/*" required>
+      <div class="modal-actions">
+        <button id="btn-cancel">Cancelar</button>
+        <button id="btn-upload">Postar Story</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Visualizador de Story em Tela Cheia -->
+  <div class="story-viewer" id="story-viewer">
+    <div class="progress-bar"><div class="progress" id="progress-line"></div></div>
+    <span class="close-viewer" id="close-viewer">&times;</span>
+    <div class="viewer-header">
+      <strong id="viewer-username">Usuário</strong>
+    </div>
+    <img id="viewer-img" src="" alt="Story">
+  </div>
 
   <script>
-    async function carregarMangas() {
-      const url = 'https://mangaverse-api.p.rapidapi.com/manga/fetch?page=1&type=all&nsfw=false';
-      const statusElement = document.getElementById('status');
-      const gridElement = document.getElementById('grid-mangas');
+    // 1. CONFIGURE SEU FIREBASE AQUI
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_PROJECT_ID.firebaseapp.com",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_PROJECT_ID.appspot.com",
+      messagingSenderId: "SEU_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
 
-      const options = {
-        method: 'GET',
-        headers: {
-          'x-rapidapi-key': '2f9e110f61msh96d638614334dc0p185004jsn4d83c1e14f79',
-          'x-rapidapi-host': 'mangaverse-api.p.rapidapi.com'
-        }
-      };
+    // Inicializa o Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const storage = firebase.storage();
+
+    // Elementos da Interface
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCancel = document.getElementById('btn-cancel');
+    const btnUpload = document.getElementById('btn-upload');
+    const modalAdd = document.getElementById('modal-add');
+    const storiesList = document.getElementById('stories-list');
+
+    const storyViewer = document.getElementById('story-viewer');
+    const closeViewer = document.getElementById('close-viewer');
+    const viewerImg = document.getElementById('viewer-img');
+    const viewerUsername = document.getElementById('viewer-username');
+    const progressLine = document.getElementById('progress-line');
+
+    // Abrir e Fechar Modal
+    btnOpenModal.onclick = () => modalAdd.style.display = 'flex';
+    btnCancel.onclick = () => modalAdd.style.display = 'none';
+
+    // Salvar Story no Firebase
+    btnUpload.onclick = async () => {
+      const username = document.getElementById('username-input').value;
+      const file = document.getElementById('image-input').files[0];
+
+      if (!username || !file) {
+        alert("Preencha seu nome e escolha uma foto!");
+        return;
+      }
+
+      btnUpload.innerText = "Enviando...";
+      btnUpload.disabled = true;
 
       try {
-        const response = await fetch(url, options);
+        // Envia a foto para o Storage
+        const storageRef = storage.ref(`stories/${Date.now()}_${file.name}`);
+        await storageRef.put(file);
+        const imageUrl = await storageRef.getDownloadURL();
 
-        if (!response.ok) {
-          throw new Error(`Erro na requisição: Status ${response.status}`);
-        }
-
-        const result = await response.json();
-        
-        let mangas = [];
-        if (Array.isArray(result)) {
-          mangas = result;
-        } else if (result.data && Array.isArray(result.data)) {
-          mangas = result.data;
-        } else if (result.data && result.data.mangas) {
-          mangas = result.data.mangas;
-        }
-
-        if (mangas.length === 0) {
-          statusElement.innerText = 'Nenhum mangá encontrado.';
-          return;
-        }
-
-        statusElement.innerText = ''; 
-
-        mangas.forEach(manga => {
-          // Cria o cartão como um link (<a>)
-          const card = document.createElement('a');
-          card.className = 'card';
-          
-          // Define a URL de destino (link do mangá ou busca no Google/fonte caso não haja URL direta)
-          const linkManga = manga.link || manga.url || `https://www.google.com/search?q=${encodeURIComponent(manga.title || manga.name)}`;
-          card.href = linkManga;
-          card.target = '_blank'; // Abre numa nova aba
-
-          const titulo = manga.title || manga.name || 'Sem título';
-          const imagem = manga.thumb || manga.cover || manga.image || 'https://via.placeholder.com/160x230?text=Sem+Capa';
-          const tipo = manga.type || 'Manga';
-
-          card.innerHTML = `
-            <img src="${imagem}" alt="${titulo}" onerror="this.src='https://via.placeholder.com/160x230?text=Sem+Capa'">
-            <div class="card-info">
-              <div class="card-title">${titulo}</div>
-              <div class="card-type">${tipo}</div>
-            </div>
-          `;
-          gridElement.appendChild(card);
+        // Grava no banco de dados
+        await db.collection('stories').add({
+          username: username,
+          imageUrl: imageUrl,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
+        modalAdd.style.display = 'none';
+        document.getElementById('username-input').value = '';
+        document.getElementById('image-input').value = '';
       } catch (error) {
-        console.error('Erro:', error);
-        statusElement.style.color = '#ff5252';
-        statusElement.innerText = error.message;
+        console.error("Erro:", error);
+        alert("Erro ao postar o story.");
+      } finally {
+        btnUpload.innerText = "Postar Story";
+        btnUpload.disabled = false;
       }
+    };
+
+    // Carregar Stories dos Usuários em Tempo Real
+    db.collection('stories')
+      .orderBy('createdAt', 'desc')
+      .onSnapshot(snapshot => {
+        storiesList.innerHTML = '';
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.imageUrl) {
+            const item = document.createElement('div');
+            item.className = 'story-item';
+            item.innerHTML = `
+              <div class="story-circle" style="background-image: url('${data.imageUrl}')"></div>
+              <p>${data.username}</p>
+            `;
+            item.onclick = () => openStory(data);
+            storiesList.appendChild(item);
+          }
+        });
+      });
+
+    // Exibir o Story por 5 segundos
+    let timer = null;
+    function openStory(data) {
+      storyViewer.style.display = 'flex';
+      viewerImg.src = data.imageUrl;
+      viewerUsername.innerText = data.username;
+      progressLine.style.width = '0%';
+
+      let width = 0;
+      clearInterval(timer);
+      timer = setInterval(() => {
+        if (width >= 100) {
+          clearInterval(timer);
+          closeStory();
+        } else {
+          width += 2;
+          progressLine.style.width = width + '%';
+        }
+      }, 100);
     }
 
-    carregarMangas();
+    function closeStory() {
+      clearInterval(timer);
+      storyViewer.style.display = 'none';
+    }
+
+    closeViewer.onclick = closeStory;
   </script>
 </body>
 </html>
