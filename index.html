@@ -1,327 +1,518 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rede Stories</title>
-  
-  <!-- Firebase SDKs (Compat Versão) -->
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carmo SuperApp</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700;800&display=swap">
+<style>
+:root {
+  --bg: #FFFFFF;
+  --card: #FFFFFF;
+  --ink: #0F172A;
+  --mute: #64748B;
+  --line: #E2E8F0;
+  --pri: #2563EB;
+  --on-pri: #FFFFFF;
+  --acc: #F59E0B;
+  --on-acc: #1E1B4B;
+  --red: #EF4444;
+  --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
 
-  <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
-    }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F172A;
+    --card: #1E293B;
+    --ink: #F8FAFC;
+    --mute: #94A3B8;
+    --line: #334155;
+    --pri: #60A5FA;
+    --on-pri: #0F172A;
+    --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+  }
+}
 
-    body {
-      background-color: #121212;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+:root[data-theme="dark"] {
+  --bg: #0F172A;
+  --card: #1E293B;
+  --ink: #F8FAFC;
+  --mute: #94A3B8;
+  --line: #334155;
+  --pri: #60A5FA;
+  --on-pri: #0F172A;
+  --shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
 
-    .header {
-      width: 100%;
-      padding: 15px;
-      text-align: center;
-      background-color: #1e1e1e;
-      border-bottom: 1px solid #333;
-    }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; margin: 0; }
+body {
+  font-family: Figtree, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  max-width: 480px;
+  margin: 0 auto;
+  padding-bottom: 96px;
+  -webkit-tap-highlight-color: transparent;
+}
 
-    .stories-container {
-      display: flex;
-      gap: 15px;
-      padding: 15px;
-      width: 100%;
-      max-width: 500px;
-      overflow-x: auto;
-      background-color: #1e1e1e;
-      border-bottom: 1px solid #333;
-    }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--acc); outline-offset: 2px; }
 
-    .story-circle {
-      min-width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      border: 3px solid #e1306c;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      background-size: cover;
-      background-position: center;
-    }
+/* Topo & Logo */
+.top { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px 6px; }
+.logo { font-weight: 800; font-size: 26px; letter-spacing: -.04em; color: var(--ink); }
+.logo i { color: var(--acc); font-style: normal; }
+.hi { font-size: 13px; color: var(--mute); margin-top: 2px; }
+.bell { position: relative; width: 44px; height: 44px; border-radius: 50%; background: var(--bg); border: 1px solid var(--line); display: grid; place-items: center; box-shadow: var(--shadow); }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.badge { position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; }
+.badge[hidden] { display: none; }
 
-    .add-story {
-      border: 2px dashed #888;
-      background-color: #2a2a2a;
-    }
+/* Stories */
+.stories { display: flex; gap: 14px; overflow-x: auto; padding: 12px 18px 4px; scrollbar-width: none; }
+.stories::-webkit-scrollbar, .ban::-webkit-scrollbar { display: none; }
+.st { flex: none; width: 68px; text-align: center; font-size: 12px; }
+.ring { width: 68px; height: 68px; border-radius: 50%; padding: 3px; background: conic-gradient(var(--acc), var(--pri), var(--acc)); margin-bottom: 6px; }
+.ring.seen { background: var(--line); }
+.ring span { width: 100%; height: 100%; border-radius: 50%; border: 3px solid var(--bg); display: grid; place-items: center; font-size: 26px; }
+.st b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
 
-    .add-story span {
-      font-size: 24px;
-      color: #fff;
-    }
+/* Banners */
+.ban { position: relative; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 18px; padding: 0 18px; scrollbar-width: none; }
+.slide { flex: none; width: 100%; scroll-snap-align: start; border-radius: 20px; padding: 18px; min-height: 148px; color: #fff; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; position: relative; overflow: hidden; box-shadow: var(--shadow); }
+.slide em { font-style: normal; position: absolute; right: 14px; top: 10px; font-size: 64px; opacity: .9; }
+.tag { font-size: 12px; font-weight: 700; background: rgba(255,255,255,.22); padding: 4px 10px; border-radius: 99px; backdrop-filter: blur(4px); }
+.slide h3 { font-size: 21px; line-height: 1.15; letter-spacing: -.02em; max-width: 230px; margin: 14px 0; }
+.cta { background: #fff; color: #0F172A; font-weight: 700; font-size: 14px; padding: 9px 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+.dots button { width: 8px; height: 8px; border-radius: 4px; background: var(--line); transition: width .2s; }
+.dots .on { width: 22px; background: var(--pri); }
 
-    .story-item p {
-      font-size: 11px;
-      text-align: center;
-      margin-top: 5px;
-      text-overflow: ellipsis;
-      overflow: hidden;
-      white-space: nowrap;
-      width: 70px;
-    }
+/* Seções e Categorias */
+.sec { padding: 22px 18px 0; }
+.sec-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+h2 { font-size: 18px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.link { color: var(--pri); font-weight: 700; font-size: 14px; }
+.cats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.cat { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 14px 0; border-radius: 16px; background: var(--card); border: 1px solid var(--line); color: var(--ink); box-shadow: var(--shadow); }
+.cat span { font-size: 26px; }
+.cat:active { transform: scale(.96); }
 
-    /* Modal de Envio */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8);
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-    }
+/* Listas / Notificações */
+.nt { display: flex; gap: 12px; padding: 12px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); margin-bottom: 8px; width: 100%; text-align: left; align-items: flex-start; box-shadow: var(--shadow); }
+.nt.un { border-left: 4px solid var(--acc); }
+.nt .ic { width: 40px; height: 40px; border-radius: 12px; background: #F1F5F9; display: grid; place-items: center; font-size: 20px; flex: none; }
+.nt p { font-size: 14px; line-height: 1.35; color: var(--ink); }
+.nt small { color: var(--mute); font-size: 12px; }
 
-    .modal-content {
-      background: #222;
-      padding: 20px;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      width: 90%;
-      max-width: 350px;
-    }
+/* Navegação Inferior */
+.nav { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 480px; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--card); border-top: 1px solid var(--line); padding: 8px 6px calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 10; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); }
+.nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--mute); padding: 4px 0; font-weight: 500; }
+.nav .w { position: relative; display: grid; place-items: center; }
+.nav .on { color: var(--pri); font-weight: 700; }
+.nav .post { color: var(--ink); }
+.nav .post .w { width: 48px; height: 48px; border-radius: 16px; background: var(--acc); color: var(--on-acc); margin-top: -22px; box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4); }
 
-    .modal-content input {
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-    }
+/* Modais & Overlays */
+.viewer { position: fixed; inset: 0; z-index: 30; background: #000; display: none; justify-content: center; }
+.viewer.open { display: flex; }
+.vbox { position: relative; width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; color: #fff; padding: 24px; }
+.bars { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); left: 12px; right: 12px; display: flex; gap: 4px; }
+.bars i { flex: 1; height: 3px; background: rgba(255,255,255,.35); border-radius: 2px; overflow: hidden; }
+.bars b { display: block; height: 100%; width: 0; background: #fff; }
+.bars .done b { width: 100%; }
+.bars .now b { animation: fill 4.5s linear forwards; }
+@keyframes fill { to { width: 100%; } }
+.vhead { position: absolute; top: calc(26px + env(safe-area-inset-top, 0px)); left: 14px; right: 14px; display: flex; align-items: center; font-weight: 700; z-index: 2; }
+.vhead button { margin-left: auto; font-size: 30px; color: #fff; width: 44px; height: 44px; }
+.vemoji { font-size: 96px; }
+.vtext { font-size: 26px; font-weight: 800; line-height: 1.15; margin-top: 16px; max-width: 300px; letter-spacing: -.02em; }
+.tap { position: absolute; top: 90px; bottom: 0; z-index: 1; }
+.tap.l { left: 0; width: 35%; } .tap.r { right: 0; width: 65%; }
 
-    .modal-actions {
-      display: flex;
-      justify-content: space-between;
-    }
+.back { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); z-index: 20; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.back.open { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; left: 50%; bottom: 0; width: 100%; max-width: 480px; max-height: 80vh; overflow: auto; background: var(--card); border-radius: 24px 24px 0 0; padding: 18px 18px calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 21; transform: translate(-50%, 105%); transition: transform .25s; box-shadow: var(--shadow); }
+.sheet.open { transform: translate(-50%, 0); }
+.toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: #0F172A; color: #FFFFFF; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: .2s; z-index: 40; white-space: nowrap; box-shadow: var(--shadow); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-    .modal-actions button {
-      padding: 8px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+/* Modal Cadastro */
+.signup { position: fixed; inset: 0; z-index: 35; background: var(--bg); display: none; overflow: auto; padding-top: env(safe-area-inset-top, 0px); }
+.signup.open { display: block; }
+.sg { max-width: 480px; margin: 0 auto; padding: 16px 22px calc(28px + env(safe-area-inset-bottom, 0px)); }
+.sg-x { display: block; margin-left: auto; color: var(--mute); font-weight: 700; font-size: 14px; padding: 10px 0; }
+.sg h1 { font-size: 28px; font-weight: 800; letter-spacing: -.03em; margin-top: 6px; }
+.sg-s { color: var(--mute); margin-top: 4px; font-size: 15px; }
+.ph { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 26px auto 22px; font-weight: 700; font-size: 14px; color: var(--pri); }
+.av { width: 104px; height: 104px; border-radius: 50%; background: #F1F5F9 center/cover; border: 2px dashed var(--pri); display: grid; place-items: center; font-size: 36px; }
+.av.has { border-style: solid; }
+.f { margin-bottom: 16px; }
+.f label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+.f input { width: 100%; font: inherit; font-size: 16px; padding: 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); }
+.f.bad input { border-color: var(--red); }
+.err { display: block; color: var(--red); font-size: 13px; margin-top: 6px; }
+.go { width: 100%; background: var(--pri); color: var(--on-pri); font-weight: 800; font-size: 16px; padding: 16px; border-radius: 16px; margin-top: 8px; }
+.note { color: var(--mute); font-size: 13px; text-align: center; margin-top: 12px; }
 
-    #btn-upload { background: #e1306c; color: white; }
-    #btn-cancel { background: #555; color: white; }
+/* Carrossel 3D (Coverflow) */
+.cv { position: relative; margin: 0 -18px; overflow: hidden; }
+.cv-stage { position: relative; height: calc(var(--s) + 58px); --s: clamp(112px, 31vw, 152px); perspective: 900px; perspective-origin: 50% 40%; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.cv-card { position: absolute; left: 50%; top: 0; width: var(--s); text-align: center; transition: transform .65s cubic-bezier(.22,.8,.24,1), opacity .5s ease; will-change: transform, opacity; }
+.cv-card:focus-visible { outline-offset: 6px; border-radius: 24px; }
+.cv-art { position: relative; display: block; width: var(--s); height: var(--s); border-radius: 22%; overflow: hidden; background: var(--card) center/cover; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.15); border: 1px solid var(--line); }
+.cv-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(255,255,255,.2), transparent 45%, rgba(0,0,0,.15)); }
+.cv-badge { position: absolute; z-index: 2; top: 4%; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 99px; background: rgba(15, 23, 42, 0.85); color: #fff; font-size: calc(var(--s)*.07); font-weight: 600; white-space: nowrap; backdrop-filter: blur(4px); }
+.cv-badge svg { width: 1.1em; height: 1.1em; fill: #FFC21A; }
+.cv-title { display: block; margin-top: 12px; font-size: 13px; line-height: 1.25; font-weight: 600; color: var(--ink); opacity: 0; transition: opacity .4s ease; }
+.cv-card.on .cv-title { opacity: 1; }
 
-    /* Visualizador de Story em Tela Cheia */
-    .story-viewer {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: #000;
-      z-index: 100;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
+/* Nova Página Interna (Detalhes) */
+.page { position: fixed; inset: 0; z-index: 25; background: var(--bg); display: none; overflow-y: auto; max-width: 480px; margin: 0 auto; padding-bottom: 32px; }
+.page.open { display: block; }
+.page-hero { position: relative; height: 200px; background: linear-gradient(135deg, var(--pri), #1E40AF); color: #fff; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; }
+.page-close { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); backdrop-filter: blur(8px); color: #fff; display: grid; place-items: center; font-weight: bold; font-size: 18px; }
+.page-body { padding: 20px; margin-top: -24px; background: var(--bg); border-radius: 24px 24px 0 0; position: relative; }
+.page-title { font-size: 24px; font-weight: 800; color: var(--ink); margin-bottom: 8px; }
+.page-desc { color: var(--mute); line-height: 1.5; font-size: 15px; margin-bottom: 20px; }
+.page-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center; }
 
-    .story-viewer img {
-      max-width: 100%;
-      max-height: 80vh;
-      object-fit: contain;
-    }
-
-    .close-viewer {
-      position: absolute;
-      top: 15px; right: 20px;
-      font-size: 30px;
-      cursor: pointer;
-      z-index: 101;
-    }
-
-    .viewer-header {
-      position: absolute;
-      top: 25px; left: 20px;
-      font-size: 16px;
-      z-index: 101;
-    }
-
-    .progress-bar {
-      position: absolute;
-      top: 10px; left: 10px; right: 10px;
-      height: 3px;
-      background: rgba(255,255,255,0.3);
-    }
-
-    .progress {
-      width: 0%;
-      height: 100%;
-      background: #fff;
-      transition: width 0.1s linear;
-    }
-  </style>
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  .bars .now b { width: 100%; }
+}
+</style>
 </head>
 <body>
 
-  <header class="header">
-    <h1>Rede Stories</h1>
-  </header>
+<header class="top">
+  <div><div class="logo">Carmo<i>.</i></div><div class="hi" id="hi"></div></div>
+  <button class="bell" id="bell" aria-label="Abrir notificações">
+    <svg class="i" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+    <span class="badge"></span>
+  </button>
+</header>
 
-  <!-- Barra de Stories -->
-  <div class="stories-container">
-    <div class="story-circle add-story" id="btn-open-modal">
-      <span>+</span>
-      <p>Novo</p>
-    </div>
-    <div id="stories-list" style="display: flex; gap: 15px;"></div>
+<section class="stories" id="stories" aria-label="Stories"></section>
+
+<section class="sec" style="padding-top:14px" aria-label="Parceiros">
+  <div class="ban" id="ban"></div>
+  <div class="dots" id="dots"></div>
+</section>
+
+<section class="sec" aria-label="Categorias">
+  <div class="sec-h"><h2>Categorias</h2></div>
+  <div class="cats" id="cats"></div>
+</section>
+
+<section class="sec" aria-label="Notificações recentes">
+  <div class="sec-h"><h2>Novidades para você</h2><button class="link" id="all">Ver todas</button></div>
+  <div class="cv" aria-roledescription="carrossel"><div class="cv-stage" id="cvStage"></div></div>
+</section>
+
+<nav class="nav" aria-label="Navegação principal">
+  <button class="on" data-t="home" aria-current="page"><span class="w"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></span>Início</button>
+  <button data-t="explore"><span class="w"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></span>Explorar</button>
+  <button class="post" data-t="post"><span class="w"><svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>Postar</button>
+  <button data-t="notif"><span class="w"><svg class="i" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="badge"></span></span>Notificações</button>
+  <button data-t="profile"><span class="w"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></span>Perfil</button>
+</nav>
+
+<!-- Modais / Outros -->
+<div class="back" id="back"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Notificações">
+  <div class="sec-h"><h2>Notificações</h2><button class="link" id="readAll">Marcar todas como lidas</button></div>
+  <div id="nlist"></div>
+</div>
+
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-label="Story">
+  <div class="vbox" id="vbox">
+    <div class="bars" id="bars"></div>
+    <div class="vhead"><span id="vname"></span><button id="vclose" aria-label="Fechar story">×</button></div>
+    <button class="tap l" id="vprev" aria-label="Story anterior"></button>
+    <button class="tap r" id="vnext" aria-label="Próximo story"></button>
+    <div class="vemoji" id="vemoji"></div>
+    <div class="vtext" id="vtext"></div>
   </div>
+</div>
 
-  <!-- Modal para Criar Story -->
-  <div class="modal" id="modal-add">
-    <div class="modal-content">
-      <h3>Criar Novo Story</h3>
-      <input type="text" id="username-input" placeholder="Seu Nome/Usuário" required>
-      <input type="file" id="image-input" accept="image/*" required>
-      <div class="modal-actions">
-        <button id="btn-cancel">Cancelar</button>
-        <button id="btn-upload">Postar Story</button>
+<section class="signup" id="signup" role="dialog" aria-modal="true" aria-labelledby="sgT">
+  <div class="sg">
+    <button class="sg-x" id="sgX" type="button">Agora não</button>
+    <h1 id="sgT">Crie seu cadastro</h1>
+    <p class="sg-s">Leva menos de um minuto.</p>
+    <button class="ph" id="phBtn" type="button"><span class="av" id="av">📷</span><span id="phT">Adicionar foto (opcional)</span></button>
+    <input type="file" id="photo" accept="image/*" hidden>
+    <div class="f"><label for="nm">Nome</label><input id="nm" autocomplete="name" placeholder="Como você se chama?" aria-describedby="nmE"><small class="err" id="nmE" role="alert"></small></div>
+    <div class="f"><label for="wa">WhatsApp</label><input id="wa" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="(11) 91234-5678" aria-describedby="waE"><small class="err" id="waE" role="alert"></small></div>
+    <button class="go" id="go" type="button">Criar cadastro</button>
+    <p class="note">Usaremos seu WhatsApp para avisar sobre seus pedidos.</p>
+  </div>
+</section>
+
+<!-- NOVA PÁGINA DETALHADA -->
+<section class="page" id="subPage">
+  <div class="page-hero" id="pageHero">
+    <button class="page-close" id="pageClose" aria-label="Voltar">✕</button>
+    <div>
+      <span class="tag" id="pageTag">Detalhes</span>
+      <h2 style="color:#fff; font-size:28px; margin-top:8px" id="pageHeroTitle">Página Exemplo</h2>
+    </div>
+  </div>
+  <div class="page-body">
+    <h3 class="page-title" id="pageBodyTitle">Título Interno</h3>
+    <p class="page-desc" id="pageDesc">Esta é uma nova página integrada diretamente ao Carmo SuperApp. Você pode navegar entre os serviços, conferir ofertas e realizar ações.</p>
+
+    <div class="sec-h"><h2>Opções disponíveis</h2></div>
+    <div class="page-card">
+      <div>
+        <strong style="display:block">Item de Exemplo 1</strong>
+        <small style="color:var(--mute)">Descrição rápida do serviço ou produto</small>
       </div>
+      <button class="cta" style="background:var(--pri); color:#fff" onclick="toast('Ação realizada!')">Acessar</button>
+    </div>
+
+    <div class="page-card">
+      <div>
+        <strong style="display:block">Item de Exemplo 2</strong>
+        <small style="color:var(--mute)">Atendimento online ou agendamento</small>
+      </div>
+      <button class="cta" style="background:var(--pri); color:#fff" onclick="toast('Ação realizada!')">Acessar</button>
     </div>
   </div>
+</section>
 
-  <!-- Visualizador de Story -->
-  <div class="story-viewer" id="story-viewer">
-    <div class="progress-bar"><div class="progress" id="progress-line"></div></div>
-    <span class="close-viewer" id="close-viewer">&times;</span>
-    <div class="viewer-header">
-      <strong id="viewer-username">Usuário</strong>
-    </div>
-    <img id="viewer-img" src="" alt="Story">
-  </div>
+<div class="toast" id="toast" role="status"></div>
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyD_UAgEl768R3DaDGTxsGjE2nJOJAmO_N8",
-      authDomain: "stories-5bc7c.firebaseapp.com",
-      projectId: "stories-5bc7c",
-      storageBucket: "stories-5bc7c.firebasestorage.app",
-      messagingSenderId: "13370075903",
-      appId: "1:13370075903:web:f76554bd014a9f9ca13aca",
-      measurementId: "G-Z91PJL1MWG"
-    };
+<script>
+const $=s=>document.querySelector(s);
+const toast=(m)=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2000)};
+let me=null;try{me=JSON.parse(localStorage.getItem('carmo:me'))}catch(e){}
+const hr=new Date().getHours();
+function greet(){const p=hr<12?'Bom dia':hr<18?'Boa tarde':'Boa noite';$('#hi').textContent=me&&me.name?`${p}, ${me.name.split(' ')[0]}! O que você precisa hoje?`:`${p}! O que você precisa hoje?`}
+greet();
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+/* ---------- Nova Página Controle ---------- */
+function openPage(title, tag, desc, bgGradient){
+  $('#pageHeroTitle').textContent = title;
+  $('#pageBodyTitle').textContent = title;
+  $('#pageTag').textContent = tag || 'Detalhes';
+  if(desc) $('#pageDesc').textContent = desc;
+  if(bgGradient) $('#pageHero').style.background = bgGradient;
+  $('#subPage').classList.add('open');
+}
+$('#pageClose').onclick = () => $('#subPage').classList.remove('open');
 
-    const btnOpenModal = document.getElementById('btn-open-modal');
-    const btnCancel = document.getElementById('btn-cancel');
-    const btnUpload = document.getElementById('btn-upload');
-    const modalAdd = document.getElementById('modal-add');
-    const storiesList = document.getElementById('stories-list');
+/* ---------- Stories ---------- */
+const stories=[
+ {n:'Feira',e:'🥬',g:['#0CA678','#0B7285'],s:['Feira de sábado na praça','Hortaliças frescas desde as 6h','Peça pelo app e retire na barraca']},
+ {n:'Padaria',e:'🥖',g:['#E67700','#C2255C'],s:['Pão quente às 16h','Combo café + pão de queijo','Pague pelo Carmo e ganhe cashback']},
+ {n:'Eventos',e:'🎟️',g:['#7048E8','#2A3BA8'],s:['Show na praça neste domingo','Ingressos com desconto no app','Leve um amigo e ganhe pontos']},
+ {n:'Saúde',e:'🩺',g:['#1098AD','#1864AB'],s:['Campanha de vacinação no bairro','Veja horários e documentos','Agende sua consulta pelo app']},
+ {n:'Vagas',e:'💼',g:['#D6336C','#862E9C'],s:['Vagas abertas na região','Cadastre seu currículo em 2 min','Candidate-se sem sair do app']}
+];
+const seen=new Set();
+function renderStories(){
+ const mine=me&&me.photo&&me.photo.startsWith('data:image/')?`<span style="background:url(${me.photo}) center/cover"></span>`:`<span style="background:var(--card);color:var(--pri);font-size:30px">+</span>`;
+ $('#stories').innerHTML=`<button class="st" data-add><div class="ring seen">${mine}</div><b>Seu story</b></button>`+
+ stories.map((s,i)=>`<button class="st" data-i="${i}"><div class="ring ${seen.has(i)?'seen':''}"><span style="background:linear-gradient(135deg,${s.g[0]},${s.g[1]})">${s.e}</span></div><b>${s.n}</b></button>`).join('');
+}
+$('#stories').addEventListener('click',e=>{
+ const b=e.target.closest('.st');if(!b)return;
+ if('add' in b.dataset)toast('Postar story chega em breve');else openStory(+b.dataset.i);
+});
+let si=0,sl=0,tm;
+function openStory(i){si=i;sl=0;$('#viewer').classList.add('open');showStory()}
+function showStory(){
+ clearTimeout(tm);
+ const s=stories[si];
+ $('#vbox').style.background=`linear-gradient(160deg,${s.g[0]},${s.g[1]})`;
+ $('#bars').innerHTML=s.s.map((_,k)=>`<i class="${k<sl?'done':k===sl?'now':''}"><b></b></i>`).join('');
+ $('#vname').textContent=s.n;$('#vemoji').textContent=s.e;$('#vtext').textContent=s.s[sl];
+ tm=setTimeout(nextStory,4500);
+}
+function nextStory(){
+ if(sl<stories[si].s.length-1){sl++;showStory()}
+ else if(si<stories.length-1){seen.add(si);si++;sl=0;showStory()}
+ else closeStory();
+}
+function prevStory(){
+ if(sl>0){sl--;showStory()}else if(si>0){si--;sl=0;showStory()}else showStory();
+}
+function closeStory(){clearTimeout(tm);seen.add(si);$('#viewer').classList.remove('open');renderStories()}
+$('#vnext').onclick=nextStory;$('#vprev').onclick=prevStory;$('#vclose').onclick=closeStory;
 
-    const storyViewer = document.getElementById('story-viewer');
-    const closeViewer = document.getElementById('close-viewer');
-    const viewerImg = document.getElementById('viewer-img');
-    const viewerUsername = document.getElementById('viewer-username');
-    const progressLine = document.getElementById('progress-line');
+/* ---------- Banner de parceiros ---------- */
+const partners=[
+ {p:'Padaria Central',t:'Café da manhã com 20% off',c:['#1F2C86','#3F51D6'],e:'☕',b:'Ver oferta'},
+ {p:'Farmácia Vida',t:'Entrega grátis acima de R$ 50',c:['#087F5B','#0B7285'],e:'💊',b:'Pedir agora'},
+ {p:'Mercado Bom Preço',t:'Ofertas da semana chegaram',c:['#C92A2A','#A61E4D'],e:'🛒',b:'Ver ofertas'},
+ {p:'Cine Praça',t:'Ingresso em dobro às quartas',c:['#5F3DC4','#862E9C'],e:'🎬',b:'Comprar'}
+];
+const ban=$('#ban');let bi=0,bt;
+ban.innerHTML=partners.map(p=>`<article class="slide" style="background:linear-gradient(135deg,${p.c[0]},${p.c[1]})"><em aria-hidden="true">${p.e}</em><span class="tag">${p.p}</span><h3>${p.t}</h3><button class="cta" data-p="${p.p}" data-bg="linear-gradient(135deg,${p.c[0]},${p.c[1]})">${p.b}</button></article>`).join('');
+$('#dots').innerHTML=partners.map((p,i)=>`<button data-d="${i}" aria-label="Parceiro ${i+1}: ${p.p}"></button>`).join('');
+function dots(){[...$('#dots').children].forEach((d,k)=>d.classList.toggle('on',k===bi))}
+function go(i){bi=(i+partners.length)%partners.length;ban.scrollTo({left:ban.children[bi].offsetLeft-18,behavior:'smooth'});dots()}
+function play(){stop();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)bt=setInterval(()=>go(bi+1),4500)}
+function stop(){clearInterval(bt)}
+ban.addEventListener('scroll',()=>{const k=Math.round(ban.scrollLeft/(ban.children[0].offsetWidth+12));if(k!==bi&&k>=0&&k<partners.length){bi=k;dots()}},{passive:true});
+['pointerdown','mouseenter'].forEach(e=>ban.addEventListener(e,stop));
+['pointerup','pointercancel','mouseleave'].forEach(e=>ban.addEventListener(e,play));
+ban.addEventListener('click',e=>{
+  const b=e.target.closest('.cta');
+  if(b) openPage(b.dataset.p, 'Oferta do Parceiro', 'Aproveite os descontos e facilidades exclusivas do nosso parceiro comercial.', b.dataset.bg);
+});
+$('#dots').addEventListener('click',e=>{const b=e.target.closest('button');if(b){go(+b.dataset.d);play()}});
+dots();play();
 
-    btnOpenModal.onclick = () => modalAdd.style.display = 'flex';
-    btnCancel.onclick = () => modalAdd.style.display = 'none';
+/* ---------- Categorias ---------- */
+const cats=[['🍔','Comida'],['🛒','Mercado'],['💊','Farmácia'],['🛠️','Serviços'],['🚌','Transporte'],['🩺','Saúde'],['🎟️','Eventos'],['➕','Mais']];
+$('#cats').innerHTML=cats.map(c=>`<button class="cat" data-c="${c[1]}"><span aria-hidden="true">${c[0]}</span>${c[1]}</button>`).join('');
+$('#cats').addEventListener('click',e=>{
+  const b=e.target.closest('.cat');
+  if(b) openPage(b.dataset.c, 'Categoria', 'Confira todos os estabelecimentos e opções disponíveis para a categoria ' + b.dataset.c + '.');
+});
 
-    // Função de conversão da imagem para Base64
-    const fileToBase64 = file => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });
+/* ---------- Notificações ---------- */
+const notes=[
+ {e:'🎉',t:'Cashback de R$ 4,50 liberado na Padaria Central',h:'agora',u:1},
+ {e:'📦',t:'Seu pedido do Mercado Bom Preço saiu para entrega',h:'12 min',u:1},
+ {e:'🎟️',t:'Os ingressos do show de domingo estão acabando',h:'1 h',u:1},
+ {e:'💬',t:'Ana comentou na sua publicação',h:'ontem',u:0}
+];
+const nHTML=(n,i)=>`<button class="nt ${n.u?'un':''}" data-n="${i}"><span class="ic">${n.e}</span><span><p>${n.t}</p><small>${n.h}</small></span></button>`;
+function renderNotes(){
+ $('#nlist').innerHTML=notes.map(nHTML).join('');
+ const c=notes.filter(n=>n.u).length;
+ document.querySelectorAll('.badge').forEach(b=>{b.textContent=c;b.hidden=!c});
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-n]');if(b){notes[+b.dataset.n].u=0;renderNotes()}});
+$('#readAll').onclick=()=>{notes.forEach(n=>n.u=0);renderNotes()};
 
-    btnUpload.onclick = async () => {
-      const username = document.getElementById('username-input').value;
-      const file = document.getElementById('image-input').files[0];
+/* ---------- Sheet e barra inferior ---------- */
+function setActive(k){document.querySelectorAll('.nav button').forEach(b=>{const on=b.dataset.t===k;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')})}
+function openSheet(){$('#back').classList.add('open');$('#sheet').classList.add('open');setActive('notif')}
+function closeSheet(){$('#back').classList.remove('open');$('#sheet').classList.remove('open');setActive('home')}
+$('#bell').onclick=openSheet;$('#all').onclick=()=>toast('A lista completa chega em breve');$('#back').onclick=closeSheet;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheet();closeSignup();if($('#viewer').classList.contains('open'))closeStory()}});
+const names={explore:'Explorar',post:'Postar',profile:'Perfil'};
+document.querySelector('.nav').addEventListener('click',e=>{
+ const b=e.target.closest('button');if(!b)return;
+ const k=b.dataset.t;
+ if(k==='notif')openSheet();
+ else if(k==='home'){closeSheet();scrollTo({top:0,behavior:'smooth'})}
+ else if(k==='profile')openSignup();
+ else toast(names[k]+' chega em breve');
+});
 
-      if (!username || !file) {
-        alert("Preenche o teu nome e escolhe uma imagem!");
-        return;
-      }
+/* ---------- Cadastro ---------- */
+let sgPhoto='',editing=false;
+const nmI=$('#nm'),waI=$('#wa');
+function setAvatar(){const a=$('#av');a.style.backgroundImage=sgPhoto?`url(${sgPhoto})`:'';a.classList.toggle('has',!!sgPhoto);a.textContent=sgPhoto?'':'📷';$('#phT').textContent=sgPhoto?'Trocar foto':'Adicionar foto (opcional)'}
+function clearErr(){['nm','wa'].forEach(k=>{$('#'+k+'E').textContent='';$('#'+k).removeAttribute('aria-invalid');$('#'+k).closest('.f').classList.remove('bad')})}
+function bad(k,m){$('#'+k+'E').textContent=m;$('#'+k).setAttribute('aria-invalid','true');$('#'+k).closest('.f').classList.add('bad')}
+function openSignup(){
+ editing=!!me;
+ nmI.value=me?me.name:'';waI.value=me?me.wa:'';sgPhoto=me&&me.photo&&me.photo.startsWith('data:image/')?me.photo:'';
+ setAvatar();clearErr();
+ $('#sgT').textContent=editing?'Seu cadastro':'Crie seu cadastro';
+ $('#go').textContent=editing?'Salvar alterações':'Criar cadastro';
+ $('#sgX').textContent=editing?'Fechar':'Agora não';
+ $('#signup').classList.add('open');setActive('profile');
+}
+function closeSignup(){$('#signup').classList.remove('open');setActive('home')}
+$('#sgX').onclick=closeSignup;
+$('#phBtn').onclick=()=>$('#photo').click();
+$('#photo').onchange=e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();
+ r.onload=()=>{const img=new Image();
+  img.onload=()=>{const m=Math.min(img.width,img.height),c=document.createElement('canvas');c.width=c.height=256;c.getContext('2d').drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,256,256);sgPhoto=c.toDataURL('image/jpeg',.82);setAvatar()};
+  img.onerror=()=>toast('Escolha uma imagem JPG ou PNG');
+  img.src=r.result};
+ r.readAsDataURL(f);e.target.value='';
+};
+waI.addEventListener('input',()=>{
+ const d=waI.value.replace(/\D/g,'').slice(0,11),k=d.length>10?7:6;
+ waI.value=d.length>6?`(${d.slice(0,2)}) ${d.slice(2,k)}-${d.slice(k)}`:d.length>2?`(${d.slice(0,2)}) ${d.slice(2)}`:d?`(${d}`:'';
+});
+$('#go').onclick=()=>{
+ const name=nmI.value.trim(),d=waI.value.replace(/\D/g,'');
+ const okN=name.length>=2,okW=/^[1-9][1-9](9\d{8}|\d{8})$/.test(d);
+ clearErr();
+ if(!okN)bad('nm','Digite seu nome');
+ if(!okW)bad('wa','Digite o DDD e o número, por exemplo (11) 91234-5678');
+ if(!okN||!okW){(okN?waI:nmI).focus();return}
+ me={name,wa:waI.value,photo:sgPhoto};
+ try{localStorage.setItem('carmo:me',JSON.stringify(me))}catch(e){}
+ closeSignup();greet();renderStories();
+ toast(editing?'Alterações salvas':'Cadastro criado');
+};
 
-      btnUpload.innerText = "A enviar...";
-      btnUpload.disabled = true;
+/* ---------- Novidades: Carrossel 3D ---------- */
+(()=>{
+const svg=b=>'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">${b}</svg>`);
+const games=[
+ {t:'Hoa',img:svg(`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3f3c8"/><stop offset="1" stop-color="#5d9e4c"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><circle cx="310" cy="70" r="38" fill="#fff6c9" opacity=".8"/><ellipse cx="60" cy="330" rx="200" ry="100" fill="#4f9143"/><ellipse cx="350" cy="360" rx="190" ry="100" fill="#3f7a3a"/><path d="M110 330C95 190 150 120 215 125c70 6 105 70 90 130-30-45-90-55-130-25-25 22-30 60-20 100z" fill="#d9d4c3"/><text x="200" y="345" text-anchor="middle" font-size="124" font-weight="700" fill="#fff" font-family="Georgia,serif">Hoa</text>`)},
+ {t:'Baki Hanma: Blood Arena',img:svg(`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b3261e"/><stop offset="1" stop-color="#1a0605"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="318" text-anchor="middle" font-size="64" font-weight="900" fill="#fff">BAKI HANMA</text>`)},
+ {t:'Karate Survivor',img:svg(`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc247"/><stop offset="1" stop-color="#c2331e"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="330" text-anchor="middle" font-size="66" font-weight="900" fill="#ffd21a">KARATE</text>`)},
+ {t:'Pup Champs',img:svg(`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ed0ff"/><stop offset="1" stop-color="#b7ecff"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="338" text-anchor="middle" font-size="76" font-weight="900" fill="#fff">PUP</text>`)},
+ {t:'Mythic Love: Iberian Legends',img:svg(`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4b3f66"/><stop offset="1" stop-color="#140f20"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="322" text-anchor="middle" font-size="52" fill="#f3c969">Mythic Love</text>`)},
+ {t:'Dungeons of Hinterberg',img:svg(`<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8f6b"/><stop offset="1" stop-color="#7fd6d0"/></linearGradient></defs><rect width="400" height="400" fill="url(#g)"/><text x="200" y="316" text-anchor="middle" font-size="40" font-weight="900" fill="#fff">DUNGEONS</text>`)},
+ {t:'KinnikuNeko',img:svg(`<rect width="400" height="400" fill="#ff9a1f"/><text x="200" y="352" text-anchor="middle" font-size="48" font-weight="900" fill="#fff">KINNIKUNEKO</text>`)},
+ {t:'Gato Roboto',img:svg(`<rect width="400" height="400" fill="#f4f4f0"/><text x="200" y="392" text-anchor="middle" font-size="58" font-weight="900" fill="#111">GATO ROBOTO</text>`)},
+ {t:'Cuisineer',img:svg(`<rect width="400" height="400" fill="#1f7f86"/><text x="200" y="378" text-anchor="middle" font-size="62" font-weight="900" fill="#ffe27a">Cuisineer</text>`)}
+];
+const crown='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7l4.5 4L12 4l4.5 7L21 7l-2 12H5z"/></svg>';
+const stage=$('#cvStage'),n=games.length;
+let cur=0,timer=null,startX=0,drag=false,lastSwipe=0;
+const cards=games.map((g,i)=>{
+ const el=document.createElement('button');
+ el.className='cv-card';el.type='button';el.setAttribute('aria-label',g.t);
+ el.innerHTML=`<span class="cv-art" style="background-image:url('${g.img}')"><span class="cv-badge">${crown}PREMIUM</span></span><span class="cv-title">${g.t}</span>`;
+ el.addEventListener('click',()=>{
+  if(Date.now()-lastSwipe<300)return;
+  if(i!==cur){cur=i;render()}else openPage(g.t, 'Jogo Premium', 'Aproveite o título com acesso completo pelo SuperApp.');
+ });
+ stage.appendChild(el);return el;
+});
+function render(){
+ cards.forEach((el,i)=>{
+  let d=((i-cur)%n+n)%n;if(d>n/2)d-=n;
+  const a=Math.abs(d),s=Math.sign(d),prev=parseInt(el.dataset.d,10);
+  el.style.transition=(isNaN(prev)||Math.abs(d-prev)>3)?'none':'';
+  const x=a?s*(.77+(a-1)*.45):0,sc=a===0?1:a===1?.9:.8;
+  el.style.transform=`translate3d(calc(-50% + ${x} * var(--s)),0,${-a*70}px) rotateY(${-s*Math.min(a,1)*38}deg) scale(${sc})`;
+  el.style.opacity=a>=3?0:1;el.style.zIndex=10-a;
+  el.style.pointerEvents=a>2?'none':'auto';
+  el.tabIndex=a===0?0:-1;el.classList.toggle('on',a===0);el.dataset.d=d;
+ });
+}
+const step=k=>{cur=((cur+k)%n+n)%n;render()};
+const stop=()=>{clearInterval(timer);timer=null};
+const play=()=>{stop();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)timer=setInterval(()=>step(1),3000)};
+stage.addEventListener('pointerdown',e=>{startX=e.clientX;drag=true;stop()});
+addEventListener('pointerup',e=>{
+ if(!drag)return;drag=false;
+ const dx=e.clientX-startX;
+ if(Math.abs(dx)>40){lastSwipe=Date.now();step(dx<0?1:-1)}
+ play();
+});
+addEventListener('pointercancel',()=>{drag=false;play()});
+stage.addEventListener('mouseenter',stop);
+stage.addEventListener('mouseleave',()=>{if(!drag)play()});
+stage.addEventListener('keydown',e=>{if(e.key==='ArrowRight'){step(1);stop()}if(e.key==='ArrowLeft'){step(-1);stop()}});
+document.addEventListener('visibilitychange',()=>document.hidden?stop():play());
+render();play();
+})();
 
-      try {
-        const imageBase64 = await fileToBase64(file);
-
-        await db.collection('stories').add({
-          username: username,
-          imageUrl: imageBase64,
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        modalAdd.style.display = 'none';
-        document.getElementById('username-input').value = '';
-        document.getElementById('image-input').value = '';
-      } catch (error) {
-        console.error("Erro:", error);
-        alert("Erro ao publicar o story. Verifica as permissões do Firestore.");
-      } finally {
-        btnUpload.innerText = "Postar Story";
-        btnUpload.disabled = false;
-      }
-    };
-
-    db.collection('stories')
-      .orderBy('createdAt', 'desc')
-      .onSnapshot(snapshot => {
-        storiesList.innerHTML = '';
-        snapshot.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.imageUrl) {
-            const item = document.createElement('div');
-            item.className = 'story-item';
-            item.innerHTML = `
-              <div class="story-circle" style="background-image: url('${data.imageUrl}')"></div>
-              <p>${data.username}</p>
-            `;
-            item.onclick = () => openStory(data);
-            storiesList.appendChild(item);
-          }
-        });
-      });
-
-    let timer = null;
-    function openStory(data) {
-      storyViewer.style.display = 'flex';
-      viewerImg.src = data.imageUrl;
-      viewerUsername.innerText = data.username;
-      progressLine.style.width = '0%';
-
-      let width = 0;
-      clearInterval(timer);
-      timer = setInterval(() => {
-        if (width >= 100) {
-          clearInterval(timer);
-          closeStory();
-        } else {
-          width += 2;
-          progressLine.style.width = width + '%';
-        }
-      }, 100);
-    }
-
-    function closeStory() {
-      clearInterval(timer);
-      storyViewer.style.display = 'none';
-    }
-
-    closeViewer.onclick = closeStory;
-  </script>
+renderStories();renderNotes();
+if(!me)openSignup();
+</script>
 </body>
 </html>
